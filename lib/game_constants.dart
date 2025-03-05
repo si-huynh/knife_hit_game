@@ -3,11 +3,18 @@ class GameConstants {
   static const double cameraHeight = 932;
   static const double knifeSpeed = -2000;
 
+  // Images
   static const background = 'layers/background.jpg';
   static const knives = 'layers/knives.png';
   static const timber = 'layers/timber.png';
   static const backButton = 'layers/back_button.png';
+
+  // Music
   static const backgroundMusic = 'background.mp3';
+  static const hitKnife = 'hit_knife.mp3';
+  static const hitTimber = 'hit_timber.mp3';
+
+  // Fonts
   static const primaryFontFamily = 'Permanent Marker';
 }
 

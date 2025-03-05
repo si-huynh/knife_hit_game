@@ -49,31 +49,49 @@ class SettingsMenuPage extends StatelessWidget {
                   ],
                 ),
                 const Gap(48),
-                Row(
-                  children: [
-                    const NeonText(
-                      text: 'Music',
-                      color: Colors.amberAccent,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontFamily: GameConstants.primaryFontFamily,
-                      ),
-                    ),
-                    const Spacer(),
-                    Switch(
-                      value: state.isMusicOn,
-                      onChanged:
-                          (value) => context.read<GameSettingsBloc>().add(
-                            const GameSettingsEvent.toggleMusic(),
-                          ),
-                    ),
-                  ],
+                _buildSettingItem(
+                  context,
+                  'Music',
+                  state.isMusicOn,
+                  const GameSettingsEvent.toggleMusic(),
+                ),
+                const Gap(32),
+                _buildSettingItem(
+                  context,
+                  'SFX',
+                  state.isSoundOn,
+                  const GameSettingsEvent.toggleSound(),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSettingItem(
+    BuildContext context,
+    String text,
+    bool value,
+    GameSettingsEvent event,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          NeonText(
+            text: text,
+            color: Colors.amberAccent,
+            style: const TextStyle(fontSize: 32),
+          ),
+          const Spacer(),
+          Switch(
+            value: value,
+            onChanged: (value) => context.read<GameSettingsBloc>().add(event),
+          ),
+        ],
+      ),
     );
   }
 }

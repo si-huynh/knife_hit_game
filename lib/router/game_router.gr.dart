@@ -11,17 +11,49 @@
 part of 'game_router.dart';
 
 /// generated route for
-/// [MainGamePage]
-class MainGameRoute extends PageRouteInfo<void> {
-  const MainGameRoute({List<PageRouteInfo>? children})
-    : super(MainGameRoute.name, initialChildren: children);
+/// [GamePlayingPage]
+class GamePlayingRoute extends PageRouteInfo<void> {
+  const GamePlayingRoute({List<PageRouteInfo>? children})
+    : super(GamePlayingRoute.name, initialChildren: children);
 
-  static const String name = 'MainGameRoute';
+  static const String name = 'GamePlayingRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const MainGamePage();
+      return const GamePlayingPage();
+    },
+  );
+}
+
+/// generated route for
+/// [MainMenuPage]
+class MainMenuRoute extends PageRouteInfo<void> {
+  const MainMenuRoute({List<PageRouteInfo>? children})
+    : super(MainMenuRoute.name, initialChildren: children);
+
+  static const String name = 'MainMenuRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MainMenuPage();
+    },
+  );
+}
+
+/// generated route for
+/// [MainPage]
+class MainRoute extends PageRouteInfo<void> {
+  const MainRoute({List<PageRouteInfo>? children})
+    : super(MainRoute.name, initialChildren: children);
+
+  static const String name = 'MainRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MainPage();
     },
   );
 }

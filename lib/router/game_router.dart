@@ -1,17 +1,26 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:knife_hit_game/pages/main_game_page.dart';
+import 'package:knife_hit_game/pages/game_playing_page.dart';
+import 'package:knife_hit_game/pages/main_menu_page.dart';
+import 'package:knife_hit_game/pages/main_page.dart';
 import 'package:knife_hit_game/pages/settings_menu_page.dart';
 part 'game_router.gr.dart';
 
 @AutoRouterConfig(replaceInRouteName: 'Screen|Page,Route')
 class GameRouter extends RootStackRouter {
   @override
-  RouteType get defaultRouteType => const RouteType.cupertino();
+  RouteType get defaultRouteType => const RouteType.material();
 
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(page: MainGameRoute.page, initial: true),
+    AutoRoute(
+      page: MainRoute.page,
+      initial: true,
+      children: [
+        AutoRoute(page: MainMenuRoute.page, initial: true),
+        AutoRoute(page: GamePlayingRoute.page),
+      ],
+    ),
     CustomRoute(
       page: SettingsMenuRoute.page,
       customRouteBuilder: <T>(context, child, page) {

@@ -32,7 +32,7 @@ class Knife extends SpriteAnimationComponent
          angle: angle,
          anchor: Anchor.center,
        ) {
-    hitbox = RectangleHitbox()..collisionType = collisionType;
+    hitbox = RectangleHitbox(size: size)..collisionType = collisionType;
     add(hitbox);
   }
   static const double knifeWidth = 55;
@@ -106,6 +106,7 @@ class Knife extends SpriteAnimationComponent
     }
     if (state != KnifeState.hit && other is Knife) {
       if (other.state == KnifeState.hit) {
+        gameRef.playHitKnife();
         bounceAnimation();
 
         //gameRef.gameOver();

@@ -8,15 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/game_settings_bloc/game_settings_bloc.dart';
 import 'package:knife_hit_game/blocs/game_stats_bloc/game_stats_bloc.dart';
-import 'package:knife_hit_game/components/background.dart';
 import 'package:knife_hit_game/components/knife.dart';
 import 'package:knife_hit_game/components/timber.dart';
 import 'package:knife_hit_game/game_constants.dart';
 import 'package:knife_hit_game/manager/game_manager.dart';
+import 'package:knife_hit_game/overlays/game_controls.dart';
 
 class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   KnifeHitGame({required this.context}) : super();
-
+  final BuildContext context;
   final manager = GameManager();
 
   late double windowHeight;
@@ -25,9 +25,20 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   late Timber timber;
   late Knife knife;
 
-  final BuildContext context;
+  late final FlameMultiBlocProvider _blocProvider;
+  late final FlameBlocProvider<GameStatsBloc, GameStatsState>
+  _statsBlocProvider;
+  late final FlameBlocProvider<GameSettingsBloc, GameSettingsState>
+  _settingsBlocProvider;
+  late final GameStatsBloc _statsBloc;
+  late final GameSettingsBloc _settingsBloc;
+
+  late final FlameBlocListener<GameSettingsBloc, GameSettingsState>
+  _settingsListener;
+  // late final FlameBlocListener<GameStatsBloc, GameStatsState> _statsListener;
 
   bool isThrowing = false;
+  bool isInitialized = false;
 
   @override
   void onGameResize(Vector2 size) {
@@ -37,55 +48,52 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   @override
-  Color backgroundColor() {
-    return Colors.white;
-  }
+  Color backgroundColor() => Colors.transparent;
 
   @override
   Future<void> onLoad() async {
     // Load and cache images
-    await Flame.images.load(GameConstants.background);
     await Flame.images.load(GameConstants.timber);
     await Flame.images.load(GameConstants.knives);
 
-    // await FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
+    await FlameAudio.audioCache.loadAll([
+      GameConstants.hitKnife,
+      GameConstants.hitTimber,
+    ]);
 
-    final background = Background();
-    _world = World()..add(background);
-    add(_world);
-
-    camera
-      ..world = _world
-      ..viewfinder.zoom = 1.0
-      ..viewfinder.visibleGameSize = Vector2(
-        GameConstants.cameraWidth,
-        GameConstants.cameraHeight,
-      )
-      ..viewfinder.position = Vector2(
-        GameConstants.cameraWidth / 2,
-        GameConstants.cameraHeight / 2,
-      )
-      ..viewfinder.anchor = Anchor.center;
-
-    _world.add(
-      FlameBlocListener<GameSettingsBloc, GameSettingsState>(
-        bloc: context.read<GameSettingsBloc>(),
-        onInitialState: (state) {
-          if (state.isMusicOn && !FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
-          } else if (!state.isMusicOn && FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.stop();
-          }
-        },
-        onNewState: (state) {
-          if (state.isMusicOn) {
-            FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
-          } else {
-            FlameAudio.bgm.stop();
-          }
-        },
-      ),
+    // Initialize blocs
+    _statsBloc = context.read<GameStatsBloc>();
+    _settingsBloc = context.read<GameSettingsBloc>();
+    _statsBlocProvider = FlameBlocProvider<GameStatsBloc, GameStatsState>(
+      create: () => _statsBloc,
     );
+    _settingsBlocProvider =
+        FlameBlocProvider<GameSettingsBloc, GameSettingsState>(
+          create: () => _settingsBloc,
+        );
+    _blocProvider = FlameMultiBlocProvider(
+      providers: [_statsBlocProvider, _settingsBlocProvider],
+    );
+
+    // Initialize settings listener
+    _settingsListener = FlameBlocListener<GameSettingsBloc, GameSettingsState>(
+      bloc: _settingsBloc,
+      onInitialState: (state) {
+        if (state.isMusicOn && !FlameAudio.bgm.isPlaying) {
+          FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
+        } else if (!state.isMusicOn && FlameAudio.bgm.isPlaying) {
+          FlameAudio.bgm.stop();
+        }
+      },
+      onNewState: (state) {
+        if (state.isMusicOn) {
+          FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
+        }
+      },
+    );
+
+    // Initialize components
+    await initialize();
   }
 
   @override
@@ -101,10 +109,16 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   Future<void> initialize() async {
+    if (isInitialized) {
+      return;
+    }
+    isInitialized = true;
+    overlays.add(GameControls.overlayName);
+
     // First create the components
     timber = Timber(
       GameConstants.cameraWidth / 2,
-      GameConstants.cameraHeight / 4,
+      GameConstants.cameraHeight / 4 + 50,
     );
 
     knife = Knife(
@@ -113,55 +127,42 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       0,
     );
 
-    // Create and add the bloc provider
-    final blocProvider = FlameMultiBlocProvider(
-      providers: [
-        FlameBlocProvider<GameStatsBloc, GameStatsState>(
-          create: buildContext!.read<GameStatsBloc>,
-        ),
-        FlameBlocProvider<GameSettingsBloc, GameSettingsState>(
-          create: buildContext!.read<GameSettingsBloc>,
-        ),
-      ],
-      children: [timber, knife],
-    );
+    // _blocProvider.addAll([timber, knife]);
 
-    // Add the bloc provider to world
-    _world.add(blocProvider);
+    // Initialize world
+    _world = World()..addAll([_blocProvider, _settingsListener, timber, knife]);
+    add(_world);
 
-    await _world.add(
-      FlameBlocListener<GameSettingsBloc, GameSettingsState>(
-        bloc: buildContext!.read<GameSettingsBloc>(),
-        onNewState: (state) {
-          if (state.isMusicOn) {
-            print('play music');
-            // FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
-          } else {
-            print('stop music');
-            //FlameAudio.bgm.stop();
-          }
-        },
-      ),
-    );
-  }
-
-  @override
-  void onAttach() {
-    super.onAttach();
-
-    _world.add(
-      FlameBlocListener<GameSettingsBloc, GameSettingsState>(
-        bloc: buildContext!.read<GameSettingsBloc>(),
-        onNewState: (state) {
-          print('settings state changed in game: $state');
-        },
-      ),
-    );
+    // Initialize camera
+    camera
+      ..world = _world
+      ..viewfinder.zoom = 1.0
+      ..viewfinder.visibleGameSize = Vector2(
+        GameConstants.cameraWidth,
+        GameConstants.cameraHeight,
+      )
+      ..viewfinder.position = Vector2(
+        GameConstants.cameraWidth / 2,
+        GameConstants.cameraHeight / 2,
+      )
+      ..viewfinder.anchor = Anchor.center;
   }
 
   void throwKnife() {
     knife.canUpdate = true;
     isThrowing = true;
+  }
+
+  void playHitKnife() {
+    if (_settingsBloc.state.isSoundOn) {
+      FlameAudio.play(GameConstants.hitKnife);
+    }
+  }
+
+  void playHitTimber() {
+    if (_settingsBloc.state.isSoundOn) {
+      FlameAudio.play(GameConstants.hitTimber);
+    }
   }
 
   void resetKnife() {
@@ -173,6 +174,15 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     );
     _world.add(knife);
     isThrowing = false;
+  }
+
+  void dispose() {
+    //_blocProvider.removeAll([_statsBlocProvider, _settingsBlocProvider]);
+    // _blocProvider.removeAll([timber, knife]);
+    _world.removeAll([_blocProvider, _settingsListener, timber, knife]);
+    remove(_world);
+    overlays.remove(GameControls.overlayName);
+    isInitialized = false;
   }
 
   Future<void> gameOver() async {

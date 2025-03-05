@@ -4,30 +4,25 @@ import 'package:gap/gap.dart';
 import 'package:knife_hit_game/design/neon_text.dart';
 import 'package:knife_hit_game/design/responsive_screen.dart';
 import 'package:knife_hit_game/game_constants.dart';
-import 'package:knife_hit_game/knife_hit_game.dart';
 import 'package:knife_hit_game/router/game_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MainMenu extends StatelessWidget {
-  const MainMenu({super.key, required this.game});
-  static const String overlayName = 'MainMenu';
-
-  // Reference to parent game.
-  final KnifeHitGame game;
+@RoutePage()
+class MainMenuPage extends StatelessWidget {
+  const MainMenuPage({super.key});
 
   final bool isLoggedIn = true;
 
   static const mainMenuTextStyle = TextStyle(
     fontSize: 55,
     height: 1,
-    fontFamily: GameConstants.primaryFontFamily,
     color: Colors.blue,
   );
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withAlpha(75),
+      color: Colors.transparent,
       child: ResponsiveScreen(
         squarishMainArea: Stack(
           children: [
@@ -77,8 +72,7 @@ class MainMenu extends StatelessWidget {
             TextButton(
               onPressed: () {
                 if (isLoggedIn) {
-                  game.overlays.remove(overlayName);
-                  game.initialize();
+                  context.router.navigate(const GamePlayingRoute());
                 } else {
                   launchUrl(
                     Uri.parse(AuthConstants.AUTH_URL),
