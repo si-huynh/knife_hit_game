@@ -80,6 +80,7 @@ class _MainPageState extends State<MainPage> {
         Positioned.fill(child: Container(color: Colors.black.withOpacity(0.3))),
         Positioned.fill(
           child: AutoTabsRouter(
+            lazyLoad: false,
             transitionBuilder:
                 (_, child, animation) =>
                     FadeScaleTransition(animation: animation, child: child),

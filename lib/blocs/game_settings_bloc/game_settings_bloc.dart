@@ -16,7 +16,6 @@ class GameSettingsBloc
     });
 
     on<_ToggleMusic>((event, emit) {
-      print('toggle music');
       emit(state.copyWith(isMusicOn: !state.isMusicOn));
     });
 

@@ -82,25 +82,36 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       onInitialState: (state) {
         if (state.isMusicOn && !FlameAudio.bgm.isPlaying) {
           FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
-        } else if (!state.isMusicOn && FlameAudio.bgm.isPlaying) {
-          FlameAudio.bgm.stop();
         }
       },
       onNewState: (state) {
         if (state.isMusicOn) {
           FlameAudio.bgm.play(GameConstants.backgroundMusic, volume: 0.2);
+        } else if (!state.isMusicOn && FlameAudio.bgm.isPlaying) {
+          FlameAudio.bgm.stop();
         }
       },
     );
 
+    _world = World()..addAll([_blocProvider, _settingsListener]);
+    add(_world);
+
+    // Initialize camera
+    camera
+      ..world = _world
+      ..viewfinder.zoom = 1.0
+      ..viewfinder.visibleGameSize = Vector2(
+        GameConstants.cameraWidth,
+        GameConstants.cameraHeight,
+      )
+      ..viewfinder.position = Vector2(
+        GameConstants.cameraWidth / 2,
+        GameConstants.cameraHeight / 2,
+      )
+      ..viewfinder.anchor = Anchor.center;
+
     // Initialize components
     await initialize();
-  }
-
-  @override
-  void onDispose() {
-    FlameAudio.bgm.stop();
-    super.onDispose();
   }
 
   @override
@@ -131,25 +142,8 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       0,
     );
 
-    // _blocProvider.addAll([timber, knife]);
-
     // Initialize world
-    _world = World()..addAll([_blocProvider, _settingsListener, timber, knife]);
-    add(_world);
-
-    // Initialize camera
-    camera
-      ..world = _world
-      ..viewfinder.zoom = 1.0
-      ..viewfinder.visibleGameSize = Vector2(
-        GameConstants.cameraWidth,
-        GameConstants.cameraHeight,
-      )
-      ..viewfinder.position = Vector2(
-        GameConstants.cameraWidth / 2,
-        GameConstants.cameraHeight / 2,
-      )
-      ..viewfinder.anchor = Anchor.center;
+    _world.addAll([timber, knife]);
   }
 
   void throwKnife() {
@@ -181,10 +175,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void dispose() {
-    //_blocProvider.removeAll([_statsBlocProvider, _settingsBlocProvider]);
-    // _blocProvider.removeAll([timber, knife]);
-    _world.removeAll([_blocProvider, _settingsListener, timber, knife]);
-    remove(_world);
+    _world.removeAll([timber, knife]);
     overlays.remove(GameControls.overlayName);
     isInitialized = false;
   }
