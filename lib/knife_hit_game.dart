@@ -4,6 +4,7 @@ import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flame_bloc/flame_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/game_settings_bloc/game_settings_bloc.dart';
@@ -108,7 +109,10 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     throwKnife();
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize({String ctx = 'Game'}) async {
+    if (kDebugMode) {
+      print('initialize $ctx');
+    }
     if (isInitialized) {
       return;
     }

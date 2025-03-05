@@ -13,10 +13,9 @@ class GamePlayingPage extends StatefulWidget {
 }
 
 class _GamePlayingPageState extends State<GamePlayingPage>
-    with WidgetsBindingObserver, AutoRouteAware {
+    with WidgetsBindingObserver {
   late final KnifeHitGame _game;
   late final GameWidget<KnifeHitGame> _gameWidget;
-  late final AutoRouteObserver? _observer;
 
   @override
   void initState() {
@@ -29,58 +28,18 @@ class _GamePlayingPageState extends State<GamePlayingPage>
       },
       initialActiveOverlays: const [GameControls.overlayName],
     );
-    WidgetsBinding.instance.addObserver(this);
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _observer =
-        RouterScope.of(context).firstObserverOfType<AutoRouteObserver>();
-    if (_observer != null) {
-      _observer.subscribe(this, context.routeData);
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    switch (state) {
-      case AppLifecycleState.resumed:
-        // print('resumed');
-        break;
-      case AppLifecycleState.paused:
-        // print('paused');
-        break;
-      case AppLifecycleState.detached:
-        // print('detached');
-        break;
-      case AppLifecycleState.inactive:
-        // print('inactive');
-        break;
-      case AppLifecycleState.hidden:
-        // print('hidden');
-        break;
-    }
+    // Initialize the game when the page is active
+    AutoTabsRouter.of(context).addListener(() {
+      final tabRouter = AutoTabsRouter.of(context);
+      if (tabRouter.activeIndex == 1 && _game.isLoaded) {
+        _game.initialize(ctx: 'GamePlayingPage');
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Material(color: Colors.transparent, child: _gameWidget);
-  }
-
-  @override
-  void didInitTabRoute(TabPageRoute? previousRoute) {
-    print('GamePlayingPage didInitTabRoute ${previousRoute?.name}');
-    super.didInitTabRoute(previousRoute);
-  }
-
-  @override
-  void didChangeTabRoute(TabPageRoute previousRoute) {
-    print('GamePlayingPage didChangeTabRoute ${previousRoute.name}');
-    super.didChangeTabRoute(previousRoute);
-    if (previousRoute.name == 'MainMenuRoute') {
-      _game.initialize();
-    }
   }
 }
