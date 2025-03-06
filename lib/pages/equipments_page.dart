@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
 import 'package:knife_hit_game/services/knife_subscription_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class KnifeItem {
   KnifeItem({
@@ -254,10 +253,11 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
   }
 
   Future<void> _loadSelectedKnife() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedKnifePath = prefs.getString('selected_knife_path');
+    // Get the knife path from the UserSessionBloc
+    final userSessionState = context.read<UserSessionBloc>().state;
+    final savedKnifePath = userSessionState.selectedKnifePath;
 
-    if (savedKnifePath != null) {
+    if (savedKnifePath.isNotEmpty) {
       try {
         // Find the knife with the saved path
         final knife = knives.firstWhere(
@@ -274,14 +274,29 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
           selectedKnife = knives.firstWhere(
             (knife) => knife.name == 'Basic Knife',
           );
+
+          // Update the UserSessionBloc with the default knife
+          context.read<UserSessionBloc>().add(
+            UserSessionEvent.updateSelectedKnife(selectedKnife!.imagePath),
+          );
         }
       } catch (e) {
         selectedKnife = knives.firstWhere(
           (knife) => knife.name == 'Basic Knife',
         );
+
+        // Update the UserSessionBloc with the default knife
+        context.read<UserSessionBloc>().add(
+          UserSessionEvent.updateSelectedKnife(selectedKnife!.imagePath),
+        );
       }
     } else {
       selectedKnife = knives.firstWhere((knife) => knife.name == 'Basic Knife');
+
+      // Update the UserSessionBloc with the default knife
+      context.read<UserSessionBloc>().add(
+        UserSessionEvent.updateSelectedKnife(selectedKnife!.imagePath),
+      );
     }
 
     setState(() {});
@@ -303,16 +318,14 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
       return;
     }
 
-    // Save selected knife to SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_knife_path', selectedKnife!.imagePath);
+    // Save the selected knife to the UserSessionBloc
+    context.read<UserSessionBloc>().add(
+      UserSessionEvent.updateSelectedKnife(selectedKnife!.imagePath),
+    );
 
-    // Extract the knife image filename from the path
-    final knifeFilename = selectedKnife!.imagePath.split('/').last;
-
-    // Call the callback if provided
+    // Notify the parent if a callback was provided
     if (widget.onKnifeSelected != null) {
-      widget.onKnifeSelected!(knifeFilename);
+      widget.onKnifeSelected!(selectedKnife!.imagePath);
     }
 
     // Close the bottom sheet
@@ -405,188 +418,197 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
         //Divider(color: Colors.white.withOpacity(0.2)),
 
         // Scrollable content area
-        Expanded(
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            cacheExtent:
-                1000, // Increase cache extent to prevent items from disappearing
-            slivers: [
-              // Selected knife display
-              SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 100,
-                        width: 100,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blueGrey[600],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.amber, width: 2),
-                        ),
-                        child: Image.asset(
-                          selectedKnife?.imagePath ??
-                              'assets/images/knives/basic.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        selectedKnife?.name ?? 'Basic Knife',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _applySelectedKnife,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text(
-                          'Use This Knife',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        _buildScrollableContent(visibleCategories, context),
+      ],
+    );
+  }
 
-              // Subscription status display
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
+  Expanded _buildScrollableContent(
+    List<String> visibleCategories,
+    BuildContext context,
+  ) {
+    return Expanded(
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        cacheExtent:
+            1000, // Increase cache extent to prevent items from disappearing
+        slivers: [
+          // Selected knife display
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 100,
+                    width: 100,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blueGrey[800]!.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.blueGrey[600],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.amber, width: 2),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Image.asset(
+                      selectedKnife?.imagePath ??
+                          'assets/images/knives/basic.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    selectedKnife?.name ?? 'Basic Knife',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _applySelectedKnife,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      'Use This Knife',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Subscription status display
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey[800]!.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.verified,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _getSubscriptionStatusText(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        const Icon(
+                          Icons.verified,
+                          color: Colors.green,
+                          size: 20,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'User ID: ${currentUserId.length > 8 ? '${currentUserId.substring(0, 8)}...' : currentUserId}',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getSubscriptionStatusText(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
-
-              // Knife collection header
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    'Knife Collection',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Knife categories - restructured to avoid nested scrolling
-              ...visibleCategories.expand((category) {
-                if (!categorizedKnives.containsKey(category) ||
-                    categorizedKnives[category]!.isEmpty) {
-                  return <Widget>[];
-                }
-
-                // Determine the appropriate crossAxisCount based on screen width
-                final screenWidth = MediaQuery.of(context).size.width;
-                final crossAxisCount =
-                    screenWidth < 360
-                        ? 3
-                        : 4; // Use 3 columns on smaller screens
-
-                return [
-                  // Category header
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                      child: Text(
-                        category,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'User ID: ${currentUserId.length > 8 ? '${currentUserId.substring(0, 8)}...' : currentUserId}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-                  // Category grid
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index >= categorizedKnives[category]!.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return _buildKnifeCard(
-                          categorizedKnives[category]![index],
-                        );
-                      }, childCount: categorizedKnives[category]!.length),
-                    ),
-                  ),
-                  // Spacing after each category
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                ];
-              }),
-
-              // Add some bottom padding
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
+
+          // Knife collection header
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Knife Collection',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          // Knife categories - restructured to avoid nested scrolling
+          ...visibleCategories.expand((category) {
+            if (!categorizedKnives.containsKey(category) ||
+                categorizedKnives[category]!.isEmpty) {
+              return <Widget>[];
+            }
+
+            // Determine the appropriate crossAxisCount based on screen width
+            final screenWidth = MediaQuery.of(context).size.width;
+            final crossAxisCount =
+                screenWidth < 360 ? 3 : 4; // Use 3 columns on smaller screens
+
+            return [
+              // Category header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
+                    ),
+                  ),
+                ),
+              ),
+              // Category grid
+              _buildListOfKnives(crossAxisCount, category),
+              // Spacing after each category
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            ];
+          }),
+
+          // Add some bottom padding
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
+      ),
+    );
+  }
+
+  SliverPadding _buildListOfKnives(int crossAxisCount, String category) {
+    final knives = categorizedKnives[category]!;
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
         ),
-      ],
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index >= knives.length) {
+            return const SizedBox.shrink();
+          }
+          return _buildKnifeCard(knives[index]);
+          // ignore: require_trailing_commas
+        }, childCount: knives.length),
+      ),
     );
   }
 

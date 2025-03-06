@@ -108,9 +108,17 @@ class Timber extends PositionComponent
     final localX = radius + radius * cos(pi / 2 - angle);
     final localY = radius + radius * sin(pi / 2 - angle);
 
-    // Create the knife
+    // Create the knife with the same image as the one that hit the timber
     final knife =
-        Knife(localX, localY, -1 * angle, state: KnifeState.hit)
+        Knife(
+            localX,
+            localY,
+            -1 * angle,
+            state: KnifeState.hit,
+            type: gameRef.knife.type,
+            variant: gameRef.knife.variant,
+            imagePath: gameRef.knife.imagePath,
+          )
           ..collisionType = CollisionType.passive
           ..canUpdate = false
           ..priority = 0;

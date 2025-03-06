@@ -159,7 +159,7 @@ class GameControls extends StatelessWidget {
               }
             },
             child: const NeonText(
-              text: 'EQUIPMENT',
+              text: 'KNIVES',
               color: Colors.yellow,
               style: TextStyle(
                 fontSize: 16,

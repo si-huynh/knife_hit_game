@@ -15,7 +15,6 @@ dependencies:
   url_launcher: ^6.3.1
   gap: ^3.0.1
   flutter_bloc: ^9.1.0
-  shared_preferences: ^2.5.2
   freezed_annotation: ^3.0.0
   flame_bloc: ^1.12.7
   hydrated_bloc: ^10.0.0
@@ -46,7 +45,6 @@ flutter:
     - assets/images/layers/
     - assets/images/knives/
     - assets/audio/
-    - assets/sfx/
     - assets/videos/
     - assets/videos/background.mp4
 

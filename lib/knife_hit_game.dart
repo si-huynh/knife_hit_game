@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/game_settings_bloc/game_settings_bloc.dart';
 import 'package:knife_hit_game/blocs/game_stats_bloc/game_stats_bloc.dart';
+import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
 import 'package:knife_hit_game/components/knife.dart';
 import 'package:knife_hit_game/components/timber.dart';
 import 'package:knife_hit_game/game_constants.dart';
@@ -39,6 +40,8 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   late final FlameBlocListener<GameSettingsBloc, GameSettingsState>
   _settingsListener;
   late final FlameBlocListener<GameStatsBloc, GameStatsState> _statsListener;
+  late final FlameBlocListener<UserSessionBloc, UserSessionState>
+  _userSessionListener;
 
   bool isThrowing = false;
   bool isInitialized = false;
@@ -61,12 +64,41 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   Future<void> onLoad() async {
     // Load and cache images
     await Flame.images.load(GameConstants.timber);
-    await Flame.images.load(GameConstants.knives);
+
+    // Preload all knife images
+    await Flame.images.load('knives/basic.png');
+
+    // Elite knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/elite$i.png');
+    }
+
+    // Luxury knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/lux$i.png');
+    }
+
+    // Premium knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/pre$i.png');
+    }
+
+    // Ultimate knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/ulti$i.png');
+    }
 
     await FlameAudio.audioCache.loadAll([
       GameConstants.hitKnife,
       GameConstants.hitTimber,
     ]);
+
+    // Get the selected knife path from the UserSessionBloc
+    final userSessionBloc = context.read<UserSessionBloc>();
+    final selectedKnifePath = userSessionBloc.getSelectedKnifePath();
+
+    // Load the knife image
+    await _loadKnifeImage(selectedKnifePath);
 
     // First create the components
     timber = Timber(
@@ -149,8 +181,23 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       },
     );
 
+    _userSessionListener = FlameBlocListener<UserSessionBloc, UserSessionState>(
+      bloc: context.read<UserSessionBloc>(),
+      onNewState: (state) {
+        // Update the knife when the selected knife path changes
+        if (isInitialized && state.selectedKnifePath.isNotEmpty) {
+          _updateKnifeFromPath(state.selectedKnifePath);
+        }
+      },
+    );
+
     _world =
-        World()..addAll([_blocProvider, _settingsListener, _statsListener]);
+        World()..addAll([
+          _blocProvider,
+          _settingsListener,
+          _statsListener,
+          _userSessionListener,
+        ]);
     add(_world);
 
     // Initialize camera
@@ -197,14 +244,16 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     isInitialized = true;
     overlays.add(GameControls.overlayName);
 
-    knife = Knife(
-      GameConstants.cameraWidth / 2,
-      GameConstants.cameraHeight - 150,
-      0,
-    );
+    // Get the selected knife path from the UserSessionBloc
+    final userSessionBloc = context.read<UserSessionBloc>();
+    final selectedKnifePath = userSessionBloc.getSelectedKnifePath();
+
+    // Load and create the knife
+    final knifePath = await _loadKnifeImage(selectedKnifePath);
+    final (knifeType, variant) = _getKnifeTypeAndVariant(knifePath);
+    knife = _createKnife(knifeType, variant, imagePath: knifePath);
 
     // Add components to the existing bloc provider
-    //_blocProvider.add(timber);
     _world.add(knife);
   }
 
@@ -328,12 +377,18 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   void resetKnife() {
     knife.removeFromParent();
 
-    // Create new knife
-    knife = Knife(
-      GameConstants.cameraWidth / 2,
-      GameConstants.cameraHeight - 150,
-      0,
-    );
+    // Get the selected knife path from the UserSessionBloc
+    final userSessionBloc = context.read<UserSessionBloc>();
+    final selectedKnifePath = userSessionBloc.getSelectedKnifePath();
+
+    // Clean the knife path
+    final knifePath = _cleanKnifePath(selectedKnifePath);
+
+    // Determine knife type and variant
+    final (knifeType, variant) = _getKnifeTypeAndVariant(knifePath);
+
+    // Create knife with the selected type and variant
+    knife = _createKnife(knifeType, variant, imagePath: knifePath);
 
     // Add new knife to bloc provider
     _blocProvider.add(knife);
@@ -387,5 +442,122 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
     // Reset knife
     resetKnife();
+  }
+
+  // Helper method to clean knife path
+  String _cleanKnifePath(String path) {
+    var cleanPath = path;
+
+    // Clean up the path if needed
+    if (cleanPath.contains('knifePath:')) {
+      cleanPath = cleanPath.split('knifePath:').last.trim();
+    }
+
+    // Remove assets/images/ prefix if present
+    if (cleanPath.startsWith('assets/images/')) {
+      cleanPath = cleanPath.substring('assets/images/'.length);
+    }
+
+    // Debug the path
+    if (kDebugMode) {
+      print('Cleaned knife path: $cleanPath');
+    }
+
+    return cleanPath;
+  }
+
+  // Helper method to load knife image
+  Future<String> _loadKnifeImage(String path) async {
+    final cleanPath = _cleanKnifePath(path);
+
+    try {
+      await Flame.images.load(cleanPath);
+      return cleanPath;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading knife image: $e');
+        print('Falling back to default knife');
+      }
+      const defaultPath = 'knives/basic.png';
+      await Flame.images.load(defaultPath);
+      return defaultPath;
+    }
+  }
+
+  // Helper method to determine knife type and variant from path
+  (KnifeType, int) _getKnifeTypeAndVariant(String path) {
+    var knifeType = KnifeType.basic;
+    var variant = 0;
+
+    if (path.contains('elite')) {
+      knifeType = KnifeType.elite;
+      // Extract variant number from the path (e.g., elite1.png -> variant 0)
+      final variantStr = path.split('elite')[1].split('.')[0];
+      variant = int.tryParse(variantStr) ?? 1;
+      variant -= 1; // Convert to 0-based index
+    } else if (path.contains('lux')) {
+      knifeType = KnifeType.luxury;
+      final variantStr = path.split('lux')[1].split('.')[0];
+      variant = int.tryParse(variantStr) ?? 1;
+      variant -= 1;
+    } else if (path.contains('pre')) {
+      knifeType = KnifeType.premium;
+      final variantStr = path.split('pre')[1].split('.')[0];
+      variant = int.tryParse(variantStr) ?? 1;
+      variant -= 1;
+    } else if (path.contains('ulti')) {
+      knifeType = KnifeType.ultimate;
+      final variantStr = path.split('ulti')[1].split('.')[0];
+      variant = int.tryParse(variantStr) ?? 1;
+      variant -= 1;
+    }
+
+    return (knifeType, variant);
+  }
+
+  // Helper method to create a knife with the selected type and variant
+  Knife _createKnife(KnifeType type, int variant, {String? imagePath}) {
+    return Knife(
+      GameConstants.cameraWidth / 2,
+      GameConstants.cameraHeight - 150,
+      0,
+      type: type,
+      variant: variant,
+      imagePath: imagePath,
+    );
+  }
+
+  // Helper method to update the knife based on the selected knife path
+  Future<void> _updateKnifeFromPath(String knifePath) async {
+    if (kDebugMode) {
+      print('Updating knife from path: $knifePath');
+    }
+
+    // Don't update if we're in the middle of throwing
+    if (isThrowing) {
+      if (kDebugMode) {
+        print('Skipping knife update because knife is being thrown');
+      }
+      return;
+    }
+
+    // Load the knife image
+    final cleanPath = await _loadKnifeImage(knifePath);
+
+    // Determine knife type and variant
+    final (knifeType, variant) = _getKnifeTypeAndVariant(cleanPath);
+
+    // Remove the old knife if it exists
+    if (isInitialized) {
+      knife.removeFromParent();
+    }
+
+    // Create knife with the selected type and variant
+    knife = _createKnife(knifeType, variant, imagePath: cleanPath);
+
+    // Add the new knife to the world or bloc provider
+    if (isInitialized) {
+      _blocProvider.add(knife);
+    }
   }
 }

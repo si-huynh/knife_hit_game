@@ -2,7 +2,6 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SubscriptionInfo {
   SubscriptionInfo({
@@ -28,12 +27,6 @@ class KnifeSubscriptionService {
   // Endpoint for fetching user subscriptions
   static const String subscriptionsEndpoint =
       '/subscriptions/user_subscriptions';
-
-  // Cache key for storing subscription data locally
-  static const String _cacheKey = 'knife_subscription_data';
-
-  // Cache duration in hours
-  static const int _cacheDurationHours = 1;
 
   /// Fetches subscription data for the given user ID
   /// Returns a SubscriptionInfo object with subscription details
@@ -69,9 +62,6 @@ class KnifeSubscriptionService {
 
         // Process the subscription data
         final subscriptionInfo = _parseSubscriptionData(data);
-
-        // Cache the result
-        await _cacheSubscriptionData(subscriptionInfo);
 
         return subscriptionInfo;
       } else {
@@ -174,77 +164,6 @@ class KnifeSubscriptionService {
     } catch (e) {
       print('Error parsing subscription data: $e');
       return SubscriptionInfo(hasSubscription: false);
-    }
-  }
-
-  /// Caches the subscription data locally
-  Future<void> _cacheSubscriptionData(SubscriptionInfo info) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final cacheData = {
-        'hasSubscription': info.hasSubscription,
-        'planCode': info.planCode,
-        'expiryDate': info.expiryDate?.toIso8601String(),
-        'subscriptionId': info.subscriptionId,
-        'status': info.status,
-        'startedAt': info.startedAt?.toIso8601String(),
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
-      await prefs.setString(_cacheKey, json.encode(cacheData));
-    } catch (e) {
-      print('Error caching subscription data: $e');
-    }
-  }
-
-  /// Retrieves cached subscription data if it's still valid
-  Future<SubscriptionInfo?> getCachedSubscriptionData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedString = prefs.getString(_cacheKey);
-
-      if (cachedString == null) {
-        return null;
-      }
-
-      final cachedData = json.decode(cachedString) as Map<String, dynamic>;
-      final timestamp = DateTime.parse(cachedData['timestamp']);
-
-      // Check if the cache is still valid (within cache duration)
-      final now = DateTime.now();
-      if (now.difference(timestamp).inHours < _cacheDurationHours) {
-        return SubscriptionInfo(
-          hasSubscription: cachedData['hasSubscription'],
-          planCode: cachedData['planCode'],
-          expiryDate:
-              cachedData['expiryDate'] != null
-                  ? DateTime.parse(cachedData['expiryDate'])
-                  : null,
-          subscriptionId: cachedData['subscriptionId'],
-          status: cachedData['status'],
-          startedAt:
-              cachedData['startedAt'] != null
-                  ? DateTime.parse(cachedData['startedAt'])
-                  : null,
-        );
-      }
-
-      // Cache is expired
-      return null;
-    } catch (e) {
-      print('Error retrieving cached subscription data: $e');
-      return null;
-    }
-  }
-
-  /// Clears the cached subscription data
-  Future<void> clearCache() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_cacheKey);
-    } catch (e) {
-      print('Error clearing subscription cache: $e');
     }
   }
 
