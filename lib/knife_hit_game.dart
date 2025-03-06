@@ -42,6 +42,9 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   bool isInitialized = false;
 
   @override
+  bool get debugMode => kDebugMode;
+
+  @override
   void onGameResize(Vector2 size) {
     windowHeight = size.y;
     windowWidth = size.x;
@@ -134,6 +137,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     timber = Timber(
       GameConstants.cameraWidth / 2,
       GameConstants.cameraHeight / 4 + 50,
+      angle: 0,
     );
 
     knife = Knife(

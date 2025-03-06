@@ -17,8 +17,8 @@ class GameRouter extends RootStackRouter {
       page: MainRoute.page,
       initial: true,
       children: [
-        AutoRoute(page: MainMenuRoute.page, initial: true),
-        AutoRoute(page: GamePlayingRoute.page),
+        AutoRoute(page: MainMenuRoute.page),
+        AutoRoute(page: GamePlayingRoute.page, initial: true),
       ],
     ),
     CustomRoute(
