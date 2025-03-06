@@ -9,4 +9,5 @@ abstract class GameStatsEvent with _$GameStatsEvent {
   const factory GameStatsEvent.playerDied() = PlayerDied;
   const factory GameStatsEvent.playerRespawned() = PlayerRespawned;
   const factory GameStatsEvent.gameReset() = GameReset;
+  const factory GameStatsEvent.statusChanged(GameStatus status) = StatusChanged;
 }

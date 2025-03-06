@@ -3,6 +3,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:knife_hit_game/knife_hit_game.dart';
 import 'package:knife_hit_game/overlays/game_controls.dart';
+import 'package:knife_hit_game/overlays/game_over.dart';
 
 @RoutePage()
 class GamePlayingPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _GamePlayingPageState extends State<GamePlayingPage>
       gameFactory: () => _game,
       overlayBuilderMap: {
         GameControls.overlayName: (context, game) => GameControls(game: game),
+        GameOver.overlayName: (context, game) => GameOver(game: game),
       },
       initialActiveOverlays: const [GameControls.overlayName],
     );

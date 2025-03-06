@@ -3,12 +3,17 @@ import 'dart:math';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
+import 'package:flame_bloc/flame_bloc.dart';
+import 'package:knife_hit_game/blocs/game_stats_bloc/game_stats_bloc.dart';
 import 'package:knife_hit_game/components/knife.dart';
 import 'package:knife_hit_game/game_constants.dart';
 import 'package:knife_hit_game/knife_hit_game.dart';
 
 class Timber extends PositionComponent
-    with HasGameRef<KnifeHitGame>, CollisionCallbacks {
+    with
+        HasGameRef<KnifeHitGame>,
+        CollisionCallbacks,
+        FlameBlocReader<GameStatsBloc, GameStatsState> {
   Timber(double x, double y, {double angle = pi / 2})
     : super(
         position: Vector2(x, y),
@@ -16,10 +21,20 @@ class Timber extends PositionComponent
         angle: angle,
         size: Vector2.all(radius * 2),
       );
-  static const double speed = 1.2;
+  static const double baseSpeed = 1.2;
   static const double radius = 117;
 
   late final SpriteComponent timberSprite;
+
+  // Rotation properties
+  double rotationSpeed = baseSpeed;
+  int rotationDirection = 1; // 1 for clockwise, -1 for counter-clockwise
+  double timeSinceLastChange = 0;
+  double changeDirectionChance = 0.005; // Base chance to change direction
+  double changeSpeedChance = 0.01; // Base chance to change speed
+
+  // Random generator
+  final Random _random = Random();
 
   @override
   Future<void> onLoad() async {
@@ -48,7 +63,41 @@ class Timber extends PositionComponent
 
   @override
   void update(double dt) {
-    angle += speed * dt;
+    // Get current level for difficulty scaling
+    final currentLevel = bloc.state.level;
+
+    // Scale difficulty based on level
+    final levelFactor = min(currentLevel / 10, 3); // Cap at 3x for level 30
+
+    // Update timers
+    timeSinceLastChange += dt;
+
+    // Increase chances based on level
+    final directionChangeThreshold = changeDirectionChance * levelFactor;
+    final speedChangeThreshold = changeSpeedChance * levelFactor;
+
+    // Random direction change (more frequent at higher levels)
+    if (_random.nextDouble() < directionChangeThreshold * dt * 60) {
+      rotationDirection *= -1;
+    }
+
+    // Random speed change (more frequent at higher levels)
+    if (_random.nextDouble() < speedChangeThreshold * dt * 60) {
+      // Random speed between 0.8x and 1.5x base speed, scaled by level
+      final speedMultiplier = 0.8 + _random.nextDouble() * 0.7 * levelFactor;
+      rotationSpeed = baseSpeed * speedMultiplier;
+    }
+
+    // Apply rotation
+    angle += rotationSpeed * rotationDirection * dt;
+
+    // Occasional sudden acceleration (higher levels only)
+    if (currentLevel > 5 &&
+        _random.nextDouble() < 0.001 * levelFactor * dt * 60) {
+      // Brief acceleration
+      angle += rotationSpeed * rotationDirection * dt * 5;
+    }
+
     super.update(dt);
   }
 
@@ -64,8 +113,7 @@ class Timber extends PositionComponent
         Knife(localX, localY, -1 * angle, state: KnifeState.hit)
           ..collisionType = CollisionType.passive
           ..canUpdate = false
-          ..priority =
-              0; // Priority doesn't matter as it's added to the knives container
+          ..priority = 0;
 
     // Add the knife to the knives container (first child)
     children.first.add(knife);

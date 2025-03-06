@@ -109,7 +109,8 @@ class Knife extends SpriteAnimationComponent
         gameRef.playHitKnife();
         bounceAnimation();
 
-        //gameRef.gameOver();
+        // Call gameOver when knife hits another knife
+        gameRef.gameOver();
         return;
       }
     }

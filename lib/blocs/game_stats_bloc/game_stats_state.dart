@@ -14,7 +14,7 @@ abstract class GameStatsState with _$GameStatsState {
 
   factory GameStatsState.empty() => const GameStatsState(
     score: 0,
-    numOfKnives: 9,
+    numOfKnives: 6, // This will be updated from the game constants
     isMute: false,
     status: GameStatus.initial,
     level: 1,

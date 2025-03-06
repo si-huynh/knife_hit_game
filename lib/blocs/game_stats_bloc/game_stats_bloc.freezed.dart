@@ -369,6 +369,72 @@ String toString() {
 
 
 /// @nodoc
+
+
+class StatusChanged implements GameStatsEvent {
+  const StatusChanged(this.status);
+  
+
+ final  GameStatus status;
+
+/// Create a copy of GameStatsEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$StatusChangedCopyWith<StatusChanged> get copyWith => _$StatusChangedCopyWithImpl<StatusChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StatusChanged&&(identical(other.status, status) || other.status == status));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,status);
+
+@override
+String toString() {
+  return 'GameStatsEvent.statusChanged(status: $status)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $StatusChangedCopyWith<$Res> implements $GameStatsEventCopyWith<$Res> {
+  factory $StatusChangedCopyWith(StatusChanged value, $Res Function(StatusChanged) _then) = _$StatusChangedCopyWithImpl;
+@useResult
+$Res call({
+ GameStatus status
+});
+
+
+
+
+}
+/// @nodoc
+class _$StatusChangedCopyWithImpl<$Res>
+    implements $StatusChangedCopyWith<$Res> {
+  _$StatusChangedCopyWithImpl(this._self, this._then);
+
+  final StatusChanged _self;
+  final $Res Function(StatusChanged) _then;
+
+/// Create a copy of GameStatsEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? status = null,}) {
+  return _then(StatusChanged(
+null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as GameStatus,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$GameStatsState {
 
  int get score; int get numOfKnives; bool get isMute; GameStatus get status; int get level;

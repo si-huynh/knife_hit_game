@@ -3,6 +3,15 @@ class GameConstants {
   static const double cameraHeight = 932;
   static const double knifeSpeed = -2000;
 
+  // Difficulty constants
+  static const int maxLevel = 30;
+  static const int baseKnivesCount = 6;
+  static const double baseTimberSpeed = 1.2;
+  static const double maxTimberSpeedMultiplier = 3;
+  static const double directionChangeBaseChance = 0.005;
+  static const double speedChangeBaseChance = 0.01;
+  static const double suddenAccelerationChance = 0.001;
+
   // Images
   static const background = 'layers/background.jpg';
   static const knives = 'layers/knives.png';
