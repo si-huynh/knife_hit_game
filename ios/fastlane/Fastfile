@@ -1,0 +1,120 @@
+# frozen_string_literal: true
+
+# update_fastlane
+
+default_platform(:ios)
+
+KEYCHAIN_NAME = 'fastlane_keychain_login'
+KEYCHAIN_PASSWORD = 'sopcaH-kusziq-6xunsa'
+
+IOS_FIREBASE_APP_IDS = {
+  Staging: '1:1052611228996:ios:028fd834ca1b0146d1d311',
+}.freeze
+
+# rubocop:disable Metrics/BlockLength
+platform :ios do
+  desc 'Load ASC API Key information to use in subsequent lanes'
+  lane :load_asc_api_key do
+    app_store_connect_api_key(
+      key_id: ENV['ASC_KEY_ID'],
+      issuer_id: ENV['ASC_ISSUER_ID'],
+      key_content: ENV['ASC_KEY'],
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
+
+  desc 'Check certs and profiles'
+  lane :prepare_signing do |_options|
+    staging = 'com.moneta.knifehit.staging'
+
+    create_keychain(
+      name: KEYCHAIN_NAME,
+      password: KEYCHAIN_PASSWORD,
+      default_keychain: false,
+      unlock: true,
+      timeout: 3600
+    )
+
+    match(
+      app_identifier: [staging],
+      type: 'appstore',
+      git_url: ENV['MATCH_GIT_URL'],
+      git_basic_authorization: ENV['MATCH_GIT_AUTHORIZATION'],
+      username: ENV['FASTLANE_USER'],
+      readonly: false
+    )
+  end
+
+  desc 'Build the iOS app'
+  lane :build_and_submit do |options|
+    api_key = lane_context[SharedValues::APP_STORE_CONNECT_API_KEY]
+
+    sh(
+      "cd ../.. && flutter build ipa \
+      --flavor=#{options[:flavor]} \
+      --release \
+      --export-options-plist=$PWD/ios/exportOptions.plist"
+    )
+
+    deliver(
+      api_key: api_key,
+      ipa: '../build/ios/ipa/knife_hit_game.ipa',
+      skip_screenshots: true,
+      skip_metadata: true,
+      skip_app_version_update: true,
+      force: true,
+      run_precheck_before_submit: false
+    )
+
+    dsym_zip(
+      archive_path: '../build/ios/archive/Runner.xcarchive'
+    )
+  end
+
+  desc 'Firebase Distribution'
+  lane :firebase_distribution do |options|
+    flavor = options[:flavor]
+    app_id = IOS_FIREBASE_APP_IDS[flavor.to_sym]
+    firebase_app_distribution(
+      app: app_id,
+      ipa_path: '../build/ios/ipa/moneta.ipa',
+      groups: 'pressingly-testers',
+      release_notes_file: '../CHANGELOG.md'
+    )
+  end
+
+  desc 'Build and upload to TestFlight Manually'
+  lane :deploy do |options|
+    # Error handling in case the flavor is invalid
+    flavor = options[:flavor]
+    unless IOS_FIREBASE_APP_IDS.key?(flavor.to_sym)
+      UI.user_error!("Invalid flavor: #{flavor}. Valid flavors are: #{IOS_FIREBASE_APP_IDS.keys.join(', ')}")
+    end
+    load_asc_api_key
+    prepare_signing
+    build_and_submit(flavor: options[:flavor])
+    firebase_distribution(flavor: options[:flavor])
+  end
+
+  desc 'Build and upload to TestFlight'
+  lane :deploy_ci do
+    load_asc_api_key
+    prepare_signing
+    build_and_submit(flavor: ENV['FLAVOR'])
+  end
+
+  desc 'Create new app & provisioning profile'
+  lane :create_app_and_profile do
+    load_asc_api_key
+    match(
+      app_identifier: ['com.moneta.knifehit.staging'],
+      type: 'development',
+      git_url: ENV['MATCH_GIT_URL'],
+      git_basic_authorization: ENV['MATCH_GIT_AUTHORIZATION'],
+      username: ENV['FASTLANE_USER'],
+      readonly: false
+    )
+  end
+end
+# rubocop:enable Metrics/BlockLength

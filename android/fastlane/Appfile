@@ -1,0 +1,2 @@
+json_key_file("/Users/sihuynh/Downloads/moneta-knife-hit-707e03b423c9.json") # Path to the json secret file - Follow https://docs.fastlane.tools/actions/supply/#setup to get one
+package_name("com.moneta.knifehit.staging") # e.g. com.krausefx.app

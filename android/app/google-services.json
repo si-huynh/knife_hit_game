@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "490816251747",
+    "project_id": "moneta-knife-hit",
+    "storage_bucket": "moneta-knife-hit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490816251747:android:07289a10f93f4afcf99556",
+        "android_client_info": {
+          "package_name": "com.example.knife_hit_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLwAj405vV-vx2evtoWRPR8g9Ac0LKOnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490816251747:android:61ceabbbb3750f2bf99556",
+        "android_client_info": {
+          "package_name": "com.moneta.knifehit.staging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLwAj405vV-vx2evtoWRPR8g9Ac0LKOnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

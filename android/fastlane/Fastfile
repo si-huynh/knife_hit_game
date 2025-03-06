@@ -1,0 +1,31 @@
+# frozen_string_literal: true
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+ANDROID_FIREBASE_APP_IDS = {
+  Staging: '1:490816251747:android:61ceabbbb3750f2bf99556',
+}.freeze
+
+platform :android do
+  desc 'Submit a new Build to Firebase Distribution'
+  lane :deploy do |options|
+    flavor = options[:flavor]
+    unless ANDROID_FIREBASE_APP_IDS.key?(flavor.to_sym)
+      UI.user_error!("Invalid flavor: #{flavor}. Valid flavors are: #{ANDROID_FIREBASE_APP_IDS.keys.join(', ')}")
+    end
+
+    sh("flutter build apk --flavor #{flavor} --release --target lib/main.dart")
+
+    app_id = ANDROID_FIREBASE_APP_IDS[flavor.to_sym]
+
+    firebase_app_distribution(
+      app: app_id,
+      android_artifact_path: "../build/app/outputs/flutter-apk/app-#{flavor.downcase}-release.apk",
+      groups: 'pressingly-testers',
+      release_notes_file: '../CHANGELOG.md'
+    )
+  end
+end

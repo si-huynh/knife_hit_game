@@ -7,18 +7,30 @@
         {
             "name": "knife_hit_game",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": [
+                "--flavor",
+                "Staging",
+            ],
         },
         {
             "name": "knife_hit_game (profile mode)",
             "request": "launch",
             "type": "dart",
+            "args": [
+                "--flavor",
+                "Staging",
+            ],
             "flutterMode": "profile"
         },
         {
             "name": "knife_hit_game (release mode)",
             "request": "launch",
             "type": "dart",
+            "args": [
+                "--flavor",
+                "Staging",
+            ],
             "flutterMode": "release"
         }
     ]

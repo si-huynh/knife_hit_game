@@ -1,4 +1,4 @@
-package com.example.knife_hit_game
+package com.moneta.knifehit
 
 import io.flutter.embedding.android.FlutterActivity
 
