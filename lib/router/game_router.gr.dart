@@ -12,44 +12,18 @@ part of 'game_router.dart';
 
 /// generated route for
 /// [EquipmentsPage]
-class EquipmentsRoute extends PageRouteInfo<EquipmentsRouteArgs> {
-  EquipmentsRoute({
-    Key? key,
-    dynamic Function(String)? onKnifeSelected,
-    List<PageRouteInfo>? children,
-  }) : super(
-         EquipmentsRoute.name,
-         args: EquipmentsRouteArgs(key: key, onKnifeSelected: onKnifeSelected),
-         initialChildren: children,
-       );
+class EquipmentsRoute extends PageRouteInfo<void> {
+  const EquipmentsRoute({List<PageRouteInfo>? children})
+    : super(EquipmentsRoute.name, initialChildren: children);
 
   static const String name = 'EquipmentsRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<EquipmentsRouteArgs>(
-        orElse: () => const EquipmentsRouteArgs(),
-      );
-      return EquipmentsPage(
-        key: args.key,
-        onKnifeSelected: args.onKnifeSelected,
-      );
+      return const EquipmentsPage();
     },
   );
-}
-
-class EquipmentsRouteArgs {
-  const EquipmentsRouteArgs({this.key, this.onKnifeSelected});
-
-  final Key? key;
-
-  final dynamic Function(String)? onKnifeSelected;
-
-  @override
-  String toString() {
-    return 'EquipmentsRouteArgs{key: $key, onKnifeSelected: $onKnifeSelected}';
-  }
 }
 
 /// generated route for

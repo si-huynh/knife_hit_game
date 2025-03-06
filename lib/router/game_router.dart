@@ -16,8 +16,8 @@ class GameRouter extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
     AutoRoute(
-      page: MainRoute.page,
       initial: true,
+      page: MainRoute.page,
       children: [
         AutoRoute(page: MainMenuRoute.page, initial: true),
         AutoRoute(page: GamePlayingRoute.page),

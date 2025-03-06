@@ -2,34 +2,21 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
+import 'package:knife_hit_game/models/knife_item.dart';
 import 'package:knife_hit_game/services/knife_subscription_service.dart';
-
-class KnifeItem {
-  KnifeItem({
-    required this.imagePath,
-    required this.name,
-    required this.category,
-    required this.price,
-    this.isLocked = false,
-  });
-  final String imagePath;
-  final String name;
-  final String category;
-  final int price;
-  final bool isLocked;
-}
+import 'package:knife_hit_game/widgets/knife_category_grid.dart';
+import 'package:knife_hit_game/widgets/notification_button.dart';
+import 'package:knife_hit_game/widgets/subscription_status_card.dart';
 
 @RoutePage()
 class EquipmentsPage extends StatefulWidget {
-  const EquipmentsPage({super.key, this.onKnifeSelected});
-  final Function(String)? onKnifeSelected;
+  const EquipmentsPage({super.key});
 
   @override
   State<EquipmentsPage> createState() => _EquipmentsPageState();
 }
 
 class _EquipmentsPageState extends State<EquipmentsPage> {
-  // final MonetaAuthService authService = MonetaAuthService();
   final subscriptionService = KnifeSubscriptionService();
 
   List<KnifeItem> knives = [];
@@ -308,28 +295,27 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
       setState(() {
         selectedKnife = knife;
       });
+
+      // Immediately apply the selected knife
+      context.read<UserSessionBloc>().add(
+        UserSessionEvent.updateSelectedKnife(knife.imagePath),
+      );
+
+      // Show a snackbar to confirm selection
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${knife.name} selected!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     } else {
       _showSubscriptionDialog(knife.category);
     }
-  }
-
-  Future<void> _applySelectedKnife() async {
-    if (selectedKnife == null) {
-      return;
-    }
-
-    // Save the selected knife to the UserSessionBloc
-    context.read<UserSessionBloc>().add(
-      UserSessionEvent.updateSelectedKnife(selectedKnife!.imagePath),
-    );
-
-    // Notify the parent if a callback was provided
-    if (widget.onKnifeSelected != null) {
-      widget.onKnifeSelected!(selectedKnife!.imagePath);
-    }
-
-    // Close the bottom sheet
-    Navigator.pop(context);
   }
 
   void _showSubscriptionDialog(String category) {
@@ -366,9 +352,9 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
     // Get visible categories based on subscriptions
     final visibleCategories = _getVisibleCategories();
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -381,155 +367,63 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
                 ? const Center(
                   child: CircularProgressIndicator(color: Colors.amber),
                 )
-                : _buildInventoryContent(context, visibleCategories),
+                : _buildStoreContent(visibleCategories),
       ),
     );
   }
 
-  Column _buildInventoryContent(
-    BuildContext context,
-    List<String> visibleCategories,
-  ) {
+  Widget _buildStoreContent(List<String> visibleCategories) {
     return Column(
       children: [
-        // Handle and close button - Fixed at the top
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Drag handle
-              const SizedBox(width: 40),
-              const Text(
-                'Knife Store',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        ),
-        //Divider(color: Colors.white.withOpacity(0.2)),
-
-        // Scrollable content area
-        _buildScrollableContent(visibleCategories, context),
+        _buildStoreHeader(),
+        _buildKnifeCollectionContent(visibleCategories),
       ],
     );
   }
 
-  Expanded _buildScrollableContent(
-    List<String> visibleCategories,
-    BuildContext context,
-  ) {
+  Widget _buildStoreHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            onPressed: () => context.router.pop(),
+            icon: Image.asset(
+              'assets/images/layers/back_button.png',
+              width: 48,
+              height: 48,
+            ),
+          ),
+          const Text(
+            'Knife Store',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          // Notification button
+          const NotificationButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKnifeCollectionContent(List<String> visibleCategories) {
     return Expanded(
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         cacheExtent:
             1000, // Increase cache extent to prevent items from disappearing
         slivers: [
-          // Selected knife display
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 100,
-                    width: 100,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blueGrey[600],
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.amber, width: 2),
-                    ),
-                    child: Image.asset(
-                      selectedKnife?.imagePath ??
-                          'assets/images/knives/basic.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    selectedKnife?.name ?? 'Basic Knife',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _applySelectedKnife,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    child: const Text(
-                      'Use This Knife',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // Subscription status display
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey[800]!.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.verified,
-                          color: Colors.green,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getSubscriptionStatusText(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'User ID: ${currentUserId.length > 8 ? '${currentUserId.substring(0, 8)}...' : currentUserId}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              child: SubscriptionStatusCard(
+                statusText: _getSubscriptionStatusText(),
+                userId: currentUserId,
               ),
             ),
           ),
@@ -549,11 +443,11 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
             ),
           ),
 
-          // Knife categories - restructured to avoid nested scrolling
-          ...visibleCategories.expand((category) {
+          // Knife categories
+          ...visibleCategories.map((category) {
             if (!categorizedKnives.containsKey(category) ||
                 categorizedKnives[category]!.isEmpty) {
-              return <Widget>[];
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
             }
 
             // Determine the appropriate crossAxisCount based on screen width
@@ -561,165 +455,90 @@ class _EquipmentsPageState extends State<EquipmentsPage> {
             final crossAxisCount =
                 screenWidth < 360 ? 3 : 4; // Use 3 columns on smaller screens
 
-            return [
-              // Category header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: Text(
-                    category,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                ),
+            return SliverToBoxAdapter(
+              child: KnifeCategoryGrid(
+                category: category,
+                knives: categorizedKnives[category]!,
+                selectedKnife: selectedKnife,
+                onKnifeSelected: _selectKnife,
+                crossAxisCount: crossAxisCount,
               ),
-              // Category grid
-              _buildListOfKnives(crossAxisCount, category),
-              // Spacing after each category
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            ];
+            );
           }),
 
           // Add some bottom padding
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+          // Logout button
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+              child: ElevatedButton.icon(
+                onPressed: _handleLogout,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent.withOpacity(0.8),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.logout),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  SliverPadding _buildListOfKnives(int crossAxisCount, String category) {
-    final knives = categorizedKnives[category]!;
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-        ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          if (index >= knives.length) {
-            return const SizedBox.shrink();
-          }
-          return _buildKnifeCard(knives[index]);
-          // ignore: require_trailing_commas
-        }, childCount: knives.length),
-      ),
-    );
-  }
-
-  Widget _buildKnifeCard(KnifeItem knife) {
-    final isSelected = selectedKnife?.name == knife.name;
-
-    return GestureDetector(
-      onTap: () => _selectKnife(knife),
-      child: RepaintBoundary(
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.blueGrey[600],
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  if (isSelected)
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.5),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  else
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                ],
-                border:
-                    isSelected
-                        ? Border.all(color: Colors.amber, width: 2)
-                        : null,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Column(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        width: double.infinity,
-                        color:
-                            Colors
-                                .blueGrey[600], // Ensure background color is solid
-                        padding: const EdgeInsets.all(6),
-                        child:
-                            knife.isLocked
-                                ? ColorFiltered(
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.grey.withOpacity(0.7),
-                                    BlendMode.saturation,
-                                  ),
-                                  child: Image.asset(
-                                    knife.imagePath,
-                                    fit: BoxFit.contain,
-                                  ),
-                                )
-                                : Image.asset(
-                                  knife.imagePath,
-                                  fit: BoxFit.contain,
-                                ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 6,
-                      ),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.amber : Colors.blueGrey[800],
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        knife.name,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.black : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  // Handle logout
+  void _handleLogout() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirm Logout'),
+            content: const Text(
+              'Are you sure you want to log out? You will only have access to the basic knife after logging out.',
             ),
-            if (knife.isLocked)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(10),
-                      bottomLeft: Radius.circular(10),
-                    ),
-                  ),
-                  child: const Icon(Icons.lock, color: Colors.white, size: 16),
-                ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-          ],
-        ),
-      ),
+              ElevatedButton(
+                onPressed: () {
+                  // Reset the user session state
+                  context.read<UserSessionBloc>().add(
+                    const UserSessionEvent.logout(),
+                  );
+
+                  // Close the dialog
+                  Navigator.pop(context);
+
+                  // Show confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('You have been logged out'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+
+                  // Navigate back to the previous screen
+                  context.router.pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
     );
   }
 }
