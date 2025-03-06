@@ -519,7 +519,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   Knife _createKnife(KnifeType type, int variant, {String? imagePath}) {
     return Knife(
       GameConstants.cameraWidth / 2,
-      GameConstants.cameraHeight - 150,
+      GameConstants.cameraHeight - 180,
       0,
       type: type,
       variant: variant,
