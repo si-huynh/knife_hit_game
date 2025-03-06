@@ -42,6 +42,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
   bool isThrowing = false;
   bool isInitialized = false;
+  bool isTransitioning = false; // Flag to track level transition state
 
   @override
   bool get debugMode => kDebugMode;
@@ -198,16 +199,18 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void throwKnife() {
-    // Only allow throwing if we have knives left
-    if (_statsBloc.state.numOfKnives > 0) {
-      knife.canUpdate = true;
-      isThrowing = true;
-
-      // Decrease the number of knives left
-      _statsBloc.add(
-        GameStatsEvent.knifeNumEvent(_statsBloc.state.numOfKnives - 1),
-      );
+    // Don't allow throwing if in transition or no knives left
+    if (isTransitioning || _statsBloc.state.numOfKnives <= 0) {
+      return;
     }
+
+    knife.canUpdate = true;
+    isThrowing = true;
+
+    // Decrease the number of knives left
+    _statsBloc.add(
+      GameStatsEvent.knifeNumEvent(_statsBloc.state.numOfKnives - 1),
+    );
   }
 
   void playHitKnife() {
@@ -232,6 +235,9 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void completeLevel() {
+    // Set transitioning flag
+    isTransitioning = true;
+
     // Calculate next level
     final nextLevel = _statsBloc.state.level + 1;
 
@@ -254,7 +260,11 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     showLevelTransition(nextLevel);
 
     // Reset the game for next level after a short delay
-    Future.delayed(const Duration(milliseconds: 1500), reset);
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      reset();
+      // Clear transitioning flag after reset
+      isTransitioning = false;
+    });
   }
 
   void showLevelTransition(int level) {
@@ -330,6 +340,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   Future<void> gameOver() async {
     // Stop the game
     isThrowing = false;
+    isTransitioning = false; // Reset transitioning flag
 
     // Save best score if current score is higher
     final currentScore = _statsBloc.state.score;
