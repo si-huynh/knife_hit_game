@@ -11,8 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 class MainMenuPage extends StatelessWidget {
   const MainMenuPage({super.key});
 
-  final bool isLoggedIn = true;
-
   static const mainMenuTextStyle = TextStyle(
     fontSize: 55,
     height: 1,
@@ -70,22 +68,15 @@ class MainMenuPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             TextButton(
-              onPressed: () {
-                if (isLoggedIn) {
-                  context.router.navigate(const GamePlayingRoute());
-                } else {
-                  launchUrl(
-                    Uri.parse(AuthConstants.AUTH_URL),
-                    mode: LaunchMode.externalApplication,
-                  );
-                }
-              },
-              child: NeonText(
-                text: isLoggedIn ? 'Play' : 'Login',
+              onPressed:
+                  () => context.router.navigate(const GamePlayingRoute()),
+              child: const NeonText(
+                text: 'Play',
                 color: Colors.white,
                 style: mainMenuTextStyle,
               ),
             ),
+
             TextButton(
               onPressed: () => context.router.push(const SettingsMenuRoute()),
               child: const NeonText(

@@ -39,4 +39,7 @@ class AuthConstants {
       'openid%20moneta_id_token%20currency%20region%20name%20timezone';
   static const AUTH_URL =
       '$AUTH_BASE_URL?client_id=$AUTH_CLIENT_ID&state=$AUTH_STATE&redirect_uri=$AUTH_REDIRECT_URI&response_type=code&scope=$AUTH_SCOPE';
+
+  // Direct OAuth URL for app links
+  static const DIRECT_AUTH_URL = 'knifegame://oauth';
 }

@@ -45,7 +45,7 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   bool isTransitioning = false; // Flag to track level transition state
 
   @override
-  bool get debugMode => kDebugMode;
+  bool get debugMode => false;
 
   @override
   void onGameResize(Vector2 size) {
@@ -184,6 +184,16 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     if (isInitialized) {
       return;
     }
+
+    if (ctx == 'GamePlayingPage') {
+      timber = Timber(
+        GameConstants.cameraWidth / 2,
+        GameConstants.cameraHeight / 4 + 50,
+        angle: 0,
+      );
+      _blocProvider.add(timber);
+    }
+
     isInitialized = true;
     overlays.add(GameControls.overlayName);
 
@@ -331,8 +341,9 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void dispose() {
-    timber.removeFromParent();
+    _blocProvider.remove(timber);
     knife.removeFromParent();
+    _statsBloc.add(const GameStatsEvent.gameReset());
     overlays.remove(GameControls.overlayName);
     isInitialized = false;
   }

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:knife_hit_game/blocs/game_stats_bloc/game_stats_bloc.dart';
+import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
 import 'package:knife_hit_game/design/neon_text.dart';
 import 'package:knife_hit_game/game_constants.dart';
 import 'package:knife_hit_game/knife_hit_game.dart';
 import 'package:knife_hit_game/router/game_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class GameControls extends StatelessWidget {
   const GameControls({super.key, required this.game});
@@ -39,6 +41,8 @@ class GameControls extends StatelessWidget {
                 builder: (context, state) {
                   return Row(
                     children: [
+                      // Equipment indicator
+                      _buildEquipmentButton(context),
                       // Level indicator
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -112,6 +116,59 @@ class GameControls extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEquipmentButton(BuildContext context) {
+    return BlocBuilder<UserSessionBloc, UserSessionState>(
+      builder: (context, state) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.yellow),
+          ),
+          child: GestureDetector(
+            onTap: () {
+              if (state.isLoggedIn) {
+                context.router.navigate(EquipmentsRoute());
+              } else {
+                showAdaptiveDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('Login required'),
+                        content: const Text(
+                          'Please login to access your equipment.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              launchUrl(
+                                Uri.parse(AuthConstants.AUTH_URL),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            },
+                            child: const Text('Continue with Moneta'),
+                          ),
+                        ],
+                      ),
+                );
+              }
+            },
+            child: const NeonText(
+              text: 'EQUIPMENT',
+              color: Colors.yellow,
+              style: TextStyle(
+                fontSize: 16,
+                fontFamily: GameConstants.primaryFontFamily,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

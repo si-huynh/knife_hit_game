@@ -1,8 +1,12 @@
 // ignore_for_file: avoid_print
 
 import 'package:animations/animations.dart';
+import 'package:app_links/app_links.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
+import 'package:knife_hit_game/game_constants.dart';
 import 'package:knife_hit_game/router/game_router.dart';
 import 'package:video_player/video_player.dart';
 
@@ -22,6 +26,27 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _initializeVideo();
+    _initAppLinks();
+  }
+
+  void _initAppLinks() {
+    final appLinks = AppLinks();
+    appLinks.uriLinkStream.listen((uri) {
+      print('URI: $uri');
+      // knifegame://oauth?current_user=5bc6af3e-a40e-4ab4-94a2-77fde0c27a66
+      if (uri.toString().contains(
+        '${AuthConstants.DIRECT_AUTH_URL}?current_user=',
+      )) {
+        // Extract user ID from the URI
+        final userIdParam = uri.queryParameters['current_user'];
+        if (userIdParam != null && userIdParam.isNotEmpty) {
+          // Save the user ID and update login state
+          final userSessionBloc = context.read<UserSessionBloc>();
+          userSessionBloc.add(UserSessionEvent.login(userIdParam));
+          print('User logged in with ID: $userIdParam');
+        }
+      }
+    });
   }
 
   Future<void> _initializeVideo() async {
