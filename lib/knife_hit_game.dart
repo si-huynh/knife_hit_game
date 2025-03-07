@@ -250,6 +250,26 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     }
   }
 
+  // Handle audio when app is paused
+  @override
+  void pauseEngine() {
+    // Pause background music if it's playing
+    if (FlameAudio.bgm.isPlaying) {
+      FlameAudio.bgm.pause();
+    }
+    super.pauseEngine();
+  }
+
+  // Handle audio when app is resumed
+  @override
+  void resumeEngine() {
+    super.resumeEngine();
+    // Resume background music if music is enabled in settings
+    if (_settingsBloc.state.isMusicOn && !FlameAudio.bgm.isPlaying) {
+      FlameAudio.bgm.resume();
+    }
+  }
+
   void completeLevel() {
     // Set transitioning flag
     isTransitioning = true;
@@ -613,5 +633,10 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     for (var i = 1; i <= 4; i++) {
       await Flame.images.load('knives/ulti$i.png');
     }
+  }
+
+  // Check if music is enabled in settings
+  bool isSettingsMusicOn() {
+    return _settingsBloc.state.isMusicOn;
   }
 }

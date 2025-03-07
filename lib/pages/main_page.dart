@@ -3,6 +3,7 @@
 import 'package:animations/animations.dart';
 import 'package:app_links/app_links.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knife_hit_game/blocs/user_session_bloc/user_session_bloc.dart';
@@ -18,15 +19,56 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _isInitialized = false;
+  bool _wasVideoPlaying = false;
+  bool _wasMusicPlaying = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeVideo();
     _initAppLinks();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Handle app lifecycle changes
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // App is in background or being closed
+        // Save video state and pause it
+        _wasVideoPlaying = _controller.value.isPlaying;
+        if (_wasVideoPlaying) {
+          _controller.pause();
+        }
+
+        // Save music state and pause it
+        _wasMusicPlaying = FlameAudio.bgm.isPlaying;
+        if (_wasMusicPlaying) {
+          FlameAudio.bgm.pause();
+        }
+        break;
+      case AppLifecycleState.resumed:
+        // App is in foreground and visible
+        // Resume video if it was playing before
+        if (_wasVideoPlaying) {
+          _controller.play();
+        }
+
+        // Resume music if it was playing before
+        if (_wasMusicPlaying) {
+          FlameAudio.bgm.resume();
+        }
+        break;
+    }
   }
 
   void _initAppLinks() {
@@ -81,6 +123,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void dispose() {
     print('VideoBackground: disposing controller');
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }
