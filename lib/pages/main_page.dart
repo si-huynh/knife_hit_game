@@ -44,6 +44,7 @@ class _MainPageState extends State<MainPage> {
           final userSessionBloc = context.read<UserSessionBloc>();
           userSessionBloc.add(UserSessionEvent.login(userIdParam));
           print('User logged in with ID: $userIdParam');
+          context.router.push(const EquipmentsRoute());
         }
       }
     });

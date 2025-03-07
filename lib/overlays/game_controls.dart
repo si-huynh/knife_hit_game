@@ -236,8 +236,9 @@ class GameControls extends StatelessWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () {
-                            launchUrl(
+                          onPressed: () async {
+                            await context.router.maybePop();
+                            await launchUrl(
                               Uri.parse(AuthConstants.AUTH_URL),
                               mode: LaunchMode.externalApplication,
                             );

@@ -43,5 +43,6 @@ class AuthConstants {
       '$AUTH_BASE_URL?client_id=$AUTH_CLIENT_ID&state=$AUTH_STATE&redirect_uri=$AUTH_REDIRECT_URI&response_type=code&scope=$AUTH_SCOPE';
 
   // Direct OAuth URL for app links
-  static const DIRECT_AUTH_URL = 'knifegame://oauth';
+  static const DIRECT_AUTH_URL =
+      'https://game-portal.stg.pressingly.net/auth/knifegame/callback';
 }

@@ -1,7 +1,7 @@
 name: knife_hit_game
-description: "A new Flutter project."
+description: "Knife Hit Game from Moneta"
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.0+2025030713
 
 environment:
   sdk: ^3.7.0

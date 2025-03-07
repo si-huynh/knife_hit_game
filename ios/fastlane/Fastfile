@@ -57,15 +57,15 @@ platform :ios do
       --export-options-plist=$PWD/ios/exportOptions.plist"
     )
 
-    # deliver(
-    #   api_key: api_key,
-    #   ipa: '../build/ios/ipa/knife_hit_game.ipa',
-    #   skip_screenshots: true,
-    #   skip_metadata: true,
-    #   skip_app_version_update: true,
-    #   force: true,
-    #   run_precheck_before_submit: false
-    # )
+    deliver(
+      api_key: api_key,
+      ipa: '../build/ios/ipa/knife_hit_game.ipa',
+      skip_screenshots: true,
+      skip_metadata: true,
+      skip_app_version_update: true,
+      force: true,
+      run_precheck_before_submit: false
+    )
 
     dsym_zip(
       archive_path: '../build/ios/archive/Runner.xcarchive'

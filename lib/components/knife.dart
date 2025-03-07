@@ -49,21 +49,41 @@ class Knife extends SpriteComponent
 
   late RectangleHitbox hitbox;
 
+  // Reusable Vector2 objects to avoid allocations
+  final Vector2 _reusableVector = Vector2.zero();
+
+  // Cache for sprite loading to avoid reloading the same sprites
+  static final Map<String, Sprite> _spriteCache = {};
+
   @override
   Future<void> onLoad() async {
     try {
       if (imagePath != null && imagePath!.isNotEmpty) {
-        // Load the specific knife image if provided
-        if (kDebugMode) {
-          print('Loading knife from path: $imagePath');
+        // Check if the sprite is already in the cache
+        if (_spriteCache.containsKey(imagePath)) {
+          sprite = _spriteCache[imagePath];
+        } else {
+          // Load the specific knife image if provided
+          if (kDebugMode) {
+            print('Loading knife from path: $imagePath');
+          }
+          sprite = await Sprite.load(imagePath!);
+          // Cache the sprite for future use
+          _spriteCache[imagePath!] = sprite!;
         }
-        sprite = await Sprite.load(imagePath!);
       } else {
         // Fallback to default knife if no path provided
-        if (kDebugMode) {
-          print('Loading default knife for type: $type, variant: $variant');
+        const defaultPath = 'knives/basic.png';
+        if (_spriteCache.containsKey(defaultPath)) {
+          sprite = _spriteCache[defaultPath];
+        } else {
+          if (kDebugMode) {
+            print('Loading default knife for type: $type, variant: $variant');
+          }
+          sprite = await Sprite.load(defaultPath);
+          // Cache the sprite for future use
+          _spriteCache[defaultPath] = sprite!;
         }
-        sprite = await Sprite.load('knives/basic.png');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -71,7 +91,14 @@ class Knife extends SpriteComponent
         print('Falling back to basic knife');
       }
       // Fallback to basic knife if there's an error
-      sprite = await Sprite.load('knives/basic.png');
+      const fallbackPath = 'knives/basic.png';
+      if (_spriteCache.containsKey(fallbackPath)) {
+        sprite = _spriteCache[fallbackPath];
+      } else {
+        sprite = await Sprite.load(fallbackPath);
+        // Cache the sprite for future use
+        _spriteCache[fallbackPath] = sprite!;
+      }
     }
 
     super.onLoad();
@@ -114,9 +141,13 @@ class Knife extends SpriteComponent
     canUpdate = false;
     state = KnifeState.flying;
     collisionType = CollisionType.inactive;
+
+    // Use reusable vector for target position
+    _reusableVector.setValues(gameRef.windowWidth, gameRef.windowHeight);
+
     add(
       MoveToEffect(
-        Vector2(gameRef.windowWidth, gameRef.windowHeight),
+        _reusableVector,
         EffectController(duration: 1),
         onComplete: removeFromParent,
       ),
@@ -130,9 +161,13 @@ class Knife extends SpriteComponent
     final x =
         -1 * gameRef.windowWidth / 2 +
         Random().nextDouble() * gameRef.windowWidth / 2;
+
+    // Use reusable vector for movement
+    _reusableVector.setValues(x, gameRef.windowHeight);
+
     add(
       MoveByEffect(
-        Vector2(x, gameRef.windowHeight),
+        _reusableVector,
         EffectController(duration: 1),
         onComplete: removeFromParent,
       ),
@@ -143,5 +178,10 @@ class Knife extends SpriteComponent
     gameRef.isThrowing = false;
     position.y = GameConstants.cameraHeight - 150;
     canUpdate = false;
+  }
+
+  // Clear the sprite cache when the game is no longer needed
+  static void clearCache() {
+    _spriteCache.clear();
   }
 }

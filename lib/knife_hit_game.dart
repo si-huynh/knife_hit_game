@@ -62,32 +62,10 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
   @override
   Future<void> onLoad() async {
-    // Load and cache images
-    await Flame.images.load(GameConstants.timber);
+    // Preload all images
+    await preloadImages();
 
-    // Preload all knife images
-    await Flame.images.load('knives/basic.png');
-
-    // Elite knives
-    for (var i = 1; i <= 4; i++) {
-      await Flame.images.load('knives/elite$i.png');
-    }
-
-    // Luxury knives
-    for (var i = 1; i <= 4; i++) {
-      await Flame.images.load('knives/lux$i.png');
-    }
-
-    // Premium knives
-    for (var i = 1; i <= 4; i++) {
-      await Flame.images.load('knives/pre$i.png');
-    }
-
-    // Ultimate knives
-    for (var i = 1; i <= 4; i++) {
-      await Flame.images.load('knives/ulti$i.png');
-    }
-
+    // Preload audio
     await FlameAudio.audioCache.loadAll([
       GameConstants.hitKnife,
       GameConstants.hitTimber,
@@ -146,29 +124,8 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       onNewState: (state) {
         switch (state.status) {
           case GameStatus.gameOver:
-            // Save best score if current score is higher
-            final currentScore = _statsBloc.state.score;
-            final bestScore = _settingsBloc.state.bestScore;
-
-            if (currentScore > bestScore) {
-              _settingsBloc.add(
-                GameSettingsEvent.updateBestScore(currentScore),
-              );
-            }
-
-            // Save highest level if current level is higher
-            final currentLevel = _statsBloc.state.level;
-            final highestLevel = _settingsBloc.state.highestLevel;
-            if (currentLevel > highestLevel) {
-              _settingsBloc.add(
-                GameSettingsEvent.updateHighestLevel(currentLevel),
-              );
-            }
-
             // Show game over overlay
             overlays.add(GameOver.overlayName);
-
-            // Don't reset the game state here - we'll do it when the user clicks "Play Again"
             break;
           case GameStatus.respawn:
             resetKnife();
@@ -315,14 +272,47 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       GameStatsEvent.knifeNumEvent(GameConstants.baseKnivesCount + nextLevel),
     );
 
-    // Add a level transition effect
+    // Ensure all knives are removed before showing level transition
+    cleanupAllKnives();
+
+    // Show level transition immediately
     showLevelTransition(nextLevel);
 
     // Reset the game for next level after a short delay
     Future.delayed(const Duration(milliseconds: 1500), () {
+      // Ensure all knives are removed before resetting
+      cleanupAllKnives();
       reset();
       // Clear transitioning flag after reset
       isTransitioning = false;
+    });
+  }
+
+  // Ensure all knives are properly removed from the game
+  void cleanupAllKnives() {
+    // Remove any knives directly in the game
+    children.whereType<Knife>().forEach((knife) {
+      if (knife != this.knife) {
+        // Don't remove the player's current knife
+        knife.removeFromParent();
+      }
+    });
+
+    // Remove any knives in the world
+    _world.children.whereType<Knife>().forEach((knife) {
+      if (knife != this.knife) {
+        // Don't remove the player's current knife
+        knife.removeFromParent();
+      }
+    });
+
+    // Remove any TimberKnifeTracker components
+    children.whereType<TimberKnifeTracker>().forEach((tracker) {
+      tracker.removeFromParent();
+    });
+
+    _world.children.whereType<TimberKnifeTracker>().forEach((tracker) {
+      tracker.removeFromParent();
     });
   }
 
@@ -396,8 +386,23 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void dispose() {
+    // Clean up components
     _blocProvider.remove(timber);
     knife.removeFromParent();
+
+    // Clear sprite cache to free memory
+    Knife.clearCache();
+
+    // Remove any lingering components
+    children.whereType<Knife>().forEach((knife) {
+      knife.removeFromParent();
+    });
+
+    _world.children.whereType<Knife>().forEach((knife) {
+      knife.removeFromParent();
+    });
+
+    // Reset game state
     _statsBloc.add(const GameStatsEvent.gameReset());
     overlays.remove(GameControls.overlayName);
     isInitialized = false;
@@ -429,6 +434,26 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   void reset() {
     // Remove old timber
     timber.removeFromParent();
+
+    // Remove any TimberKnifeTracker components that might be left
+    _world.children.whereType<TimberKnifeTracker>().forEach((tracker) {
+      tracker.removeFromParent();
+    });
+
+    // Remove any lingering knives that might be animating
+    children.whereType<Knife>().forEach((knife) {
+      if (knife != this.knife) {
+        // Don't remove the player's current knife
+        knife.removeFromParent();
+      }
+    });
+
+    _world.children.whereType<Knife>().forEach((knife) {
+      if (knife != this.knife) {
+        // Don't remove the player's current knife
+        knife.removeFromParent();
+      }
+    });
 
     // Create new timber
     timber = Timber(
@@ -558,6 +583,35 @@ class KnifeHitGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     // Add the new knife to the world or bloc provider
     if (isInitialized) {
       _blocProvider.add(knife);
+    }
+  }
+
+  // Optimize image loading by preloading all required images at startup
+  Future<void> preloadImages() async {
+    // Preload timber image
+    await Flame.images.load(GameConstants.timber);
+
+    // Preload all knife images
+    await Flame.images.load('knives/basic.png');
+
+    // Elite knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/elite$i.png');
+    }
+
+    // Luxury knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/lux$i.png');
+    }
+
+    // Premium knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/pre$i.png');
+    }
+
+    // Ultimate knives
+    for (var i = 1; i <= 4; i++) {
+      await Flame.images.load('knives/ulti$i.png');
     }
   }
 }
