@@ -36,6 +36,7 @@ migrate_working_dir/
 
 # Symbolication related
 app.*.symbols
+Runner.app.dSYM.zip
 
 # Obfuscation related
 app.*.map.json

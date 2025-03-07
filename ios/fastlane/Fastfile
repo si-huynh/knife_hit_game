@@ -8,7 +8,7 @@ KEYCHAIN_NAME = 'fastlane_keychain_login'
 KEYCHAIN_PASSWORD = 'sopcaH-kusziq-6xunsa'
 
 IOS_FIREBASE_APP_IDS = {
-  Staging: '1:1052611228996:ios:028fd834ca1b0146d1d311',
+  Staging: '1:490816251747:ios:43f4c0f9b697ef29f99556',
 }.freeze
 
 # rubocop:disable Metrics/BlockLength
@@ -57,15 +57,15 @@ platform :ios do
       --export-options-plist=$PWD/ios/exportOptions.plist"
     )
 
-    deliver(
-      api_key: api_key,
-      ipa: '../build/ios/ipa/knife_hit_game.ipa',
-      skip_screenshots: true,
-      skip_metadata: true,
-      skip_app_version_update: true,
-      force: true,
-      run_precheck_before_submit: false
-    )
+    # deliver(
+    #   api_key: api_key,
+    #   ipa: '../build/ios/ipa/knife_hit_game.ipa',
+    #   skip_screenshots: true,
+    #   skip_metadata: true,
+    #   skip_app_version_update: true,
+    #   force: true,
+    #   run_precheck_before_submit: false
+    # )
 
     dsym_zip(
       archive_path: '../build/ios/archive/Runner.xcarchive'
@@ -78,9 +78,8 @@ platform :ios do
     app_id = IOS_FIREBASE_APP_IDS[flavor.to_sym]
     firebase_app_distribution(
       app: app_id,
-      ipa_path: '../build/ios/ipa/moneta.ipa',
-      groups: 'pressingly-testers',
-      release_notes_file: '../CHANGELOG.md'
+      ipa_path: '../build/ios/ipa/knife_hit_game.ipa',
+      groups: 'moneta-testers',
     )
   end
 

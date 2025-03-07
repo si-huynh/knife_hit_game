@@ -24,8 +24,7 @@ platform :android do
     firebase_app_distribution(
       app: app_id,
       android_artifact_path: "../build/app/outputs/flutter-apk/app-#{flavor.downcase}-release.apk",
-      groups: 'pressingly-testers',
-      release_notes_file: '../CHANGELOG.md'
+      groups: 'moneta-testers',
     )
   end
 end
