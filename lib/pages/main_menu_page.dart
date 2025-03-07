@@ -5,7 +5,6 @@ import 'package:knife_hit_game/design/neon_text.dart';
 import 'package:knife_hit_game/design/responsive_screen.dart';
 import 'package:knife_hit_game/game_constants.dart';
 import 'package:knife_hit_game/router/game_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class MainMenuPage extends StatelessWidget {
@@ -29,6 +28,7 @@ class MainMenuPage extends StatelessWidget {
                 'assets/images/layers/timber.png',
                 width: 320,
                 height: 320,
+                fit: BoxFit.cover,
               ),
             ),
             Center(
@@ -87,9 +87,15 @@ class MainMenuPage extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                launchUrl(
-                  Uri.parse('https://game-portal.stg.pressingly.net'),
-                  mode: LaunchMode.externalApplication,
+                showAboutDialog(
+                  context: context,
+                  applicationName: 'Knife Hit',
+                  applicationVersion: '1.0.0',
+                  applicationIcon: Image.asset(
+                    'assets/images/layers/timber.png',
+                    width: 64,
+                    height: 64,
+                  ),
                 );
               },
               child: const NeonText(
