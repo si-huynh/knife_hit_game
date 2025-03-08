@@ -117,7 +117,7 @@ class _NotificationButtonState extends State<NotificationButton>
                                 ),
                               ),
                               Text(
-                                'Check out the latest game updates!',
+                                'Explore our game portal for exclusive deals and special rewards',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
                                   fontSize: 12,

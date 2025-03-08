@@ -1,5 +1,7 @@
 // ignore_for_file: avoid_print
 
+import 'dart:io';
+
 import 'package:animations/animations.dart';
 import 'package:app_links/app_links.dart';
 import 'package:auto_route/auto_route.dart';
@@ -29,8 +31,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeVideo();
     _initAppLinks();
+    _initializeVideo();
   }
 
   @override
@@ -45,9 +47,11 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       case AppLifecycleState.hidden:
         // App is in background or being closed
         // Save video state and pause it
-        _wasVideoPlaying = _controller.value.isPlaying;
-        if (_wasVideoPlaying) {
-          _controller.pause();
+        if (!Platform.isAndroid) {
+          _wasVideoPlaying = _controller.value.isPlaying;
+          if (_wasVideoPlaying) {
+            _controller.pause();
+          }
         }
 
         // Save music state and pause it
@@ -59,8 +63,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App is in foreground and visible
         // Resume video if it was playing before
-        if (_wasVideoPlaying) {
-          _controller.play();
+        if (!Platform.isAndroid) {
+          if (_wasVideoPlaying) {
+            _controller.play();
+          }
         }
 
         // Resume music if it was playing before
@@ -93,6 +99,13 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   }
 
   Future<void> _initializeVideo() async {
+    if (Platform.isAndroid) {
+      print('VideoBackground: skipping video initialization on Android');
+      setState(() {
+        _isInitialized = true;
+      });
+      return;
+    }
     print('VideoBackground: initializing video controller');
     try {
       _controller = VideoPlayerController.asset('assets/videos/background.mp4');
@@ -136,16 +149,24 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
     return Stack(
       children: [
-        SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _controller.value.size.width,
-              height: _controller.value.size.height,
-              child: VideoPlayer(_controller),
+        if (Platform.isAndroid)
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/layers/background.jpg',
+              fit: BoxFit.cover,
+            ),
+          )
+        else
+          SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _controller.value.size.width,
+                height: _controller.value.size.height,
+                child: VideoPlayer(_controller),
+              ),
             ),
           ),
-        ),
         Positioned.fill(child: Container(color: Colors.black.withOpacity(0.3))),
         Positioned.fill(
           child: AutoTabsRouter(

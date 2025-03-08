@@ -32,6 +32,7 @@
                     android:scheme="https"
                     android:host="game-portal.stg.pressingly.net"
                     android:path="/auth/knifegame/callback" />
+                <data android:scheme="http" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

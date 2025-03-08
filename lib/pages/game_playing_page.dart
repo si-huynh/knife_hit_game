@@ -1,10 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flame/game.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:knife_hit_game/knife_hit_game.dart';
 import 'package:knife_hit_game/overlays/game_controls.dart';
 import 'package:knife_hit_game/overlays/game_over.dart';
-import 'package:flame_audio/flame_audio.dart';
 
 @RoutePage()
 class GamePlayingPage extends StatefulWidget {

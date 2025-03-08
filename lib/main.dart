@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +35,14 @@ class AppGameWidget extends StatelessWidget {
         BlocProvider<UserSessionBloc>(create: (context) => UserSessionBloc()),
       ],
       child: MaterialApp.router(
-        routerConfig: GameRouter().config(),
+        routerConfig: GameRouter().config(
+          deepLinkBuilder: (deepLink) {
+            if (kDebugMode) {
+              print('deepLinkBuilder: ${deepLink.path}');
+            }
+            return DeepLink.defaultPath;
+          },
+        ),
         theme: ThemeData(
           fontFamily: GameConstants.primaryFontFamily,
           colorScheme: ColorScheme.fromSeed(
